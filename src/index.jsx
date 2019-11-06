@@ -1,0 +1,11 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+
+import 'semantic-ui-css/semantic.min.css';
+
+import * as serviceWorker from './serviceWorker';
+import App from './App/App';
+
+ReactDOM.render(<App />, document.getElementById('root'));
+
+serviceWorker.unregister();
