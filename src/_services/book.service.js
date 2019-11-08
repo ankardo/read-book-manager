@@ -37,7 +37,7 @@ const addBookToDatabase = book => {
           readBooksList = [...readBooksList, book];
           readBooksSubject.next(readBooksList);
         })
-        .catch(e => console.log(e.stack || e));
+        .catch(error => console.error(error.stack || error));
     }
   });
 };
@@ -60,7 +60,7 @@ const refreshReadBooks = async () => {
   database.transaction('r', database.readBooks, async () => {
     readBooksList = await database.readBooks
       .toArray()
-      .catch(e => console.log(e.stack || e));
+      .catch(error => console.error(error.stack || error));
     readBooksSubject.next(readBooksList);
   });
 };

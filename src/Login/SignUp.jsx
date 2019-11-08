@@ -1,27 +1,35 @@
 import React from 'react';
 import { Form, Container, Button, FormField, Icon } from 'semantic-ui-react';
 import { MContext } from '../_configuration/Context';
+import InfoModal from '../_utils/InfoModal';
 
 class SignUp extends React.Component {
   static contextType = MContext;
   state = {
     name: '',
     email: '',
-    password: ''
+    password: '',
+    hasError: false,
+    errorType: '',
+    errorMessage: ''
   };
 
   handleSignUp = () => {
     const database = this.context.state.database;
     const { name, email, password } = this.state;
 
-      database
+    database
       .transaction('rw', database.users, async () => {
         const hasAlreadyRegistered = await database.users
           .where('email')
           .equals(email)
           .first();
         if (hasAlreadyRegistered) {
-          alert(`Email already registered`);
+          this.setState({
+            hasError: true,
+            errorType: 'Email already registered',
+            errorMessage: 'Looks like someone got here first'
+          });
         }
         if (
           hasAlreadyRegistered === undefined &&
@@ -36,14 +44,28 @@ class SignUp extends React.Component {
           });
         }
       })
-      .then(() => this.props.history.push('/login'))
-      .catch(e => console.log(e.stack || e));
+      .then(() => {
+        if (!this.state.hasError) this.props.history.push('/login');
+      })
+      .catch(error => console.error(error.stack || error));
   };
   render() {
     return (
       <MContext.Consumer>
         {() => (
           <Container>
+            <InfoModal
+              open={this.state.hasError}
+              messageType = {this.state.errorType}
+              message = {this.state.errorMessage}
+              onClick={() =>
+                this.setState({
+                  hasError: false,
+                  errorType: '',
+                  errorMessage: ''
+                })
+              }
+            />
             <Form onSubmit={this.handleSignUp}>
               <FormField>
                 <label>User Name</label>

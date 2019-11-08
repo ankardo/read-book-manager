@@ -13,6 +13,7 @@ import {
 import logo from '../Books/logo.png';
 import { MContext } from '../_configuration/Context';
 import { bookService } from '../_services/book.service';
+import InfoModal from '../_utils/InfoModal';
 
 class Books extends React.Component {
   static contextType = MContext;
@@ -22,7 +23,10 @@ class Books extends React.Component {
     searchValue: '',
     totalPages: 0,
     activePage: 1,
-    showReadBooks: false
+    showReadBooks: false,
+    hasError: false,
+    errorType: '',
+    errorMessage: ''
   };
   options = [
     { key: 'title', text: 'Title', value: 'Title' },
@@ -44,9 +48,9 @@ class Books extends React.Component {
           totalPages: Math.ceil(data.numFound / 100)
         });
       })
-      .catch(e => {
+      .catch(error => {
         this.setState({ isSearching: false });
-        console.log(e.stack || e);
+        console.error(error.stack || error);
       });
   };
 
@@ -81,7 +85,11 @@ class Books extends React.Component {
         );
       }
     } else {
-      alert('You should type something to search!');
+      this.setState({
+        hasError: true,
+        errorType: "Couldn't Search Books",
+        errorMessage: 'You should type something to search!'
+      });
     }
   };
   handleOptionChange = (e, { value }) => {
@@ -125,7 +133,7 @@ class Books extends React.Component {
           }
         }
       })
-      .catch(e => console.log(e.stack || e));
+      .catch(error => console.error(error.stack || error));
     if (!checked) {
       this.setState({ showReadBooks: false });
       if (this.state.searchString && this.state.searchString.trim !== '') {
@@ -135,7 +143,7 @@ class Books extends React.Component {
         this.setState({ totalPages: 0 });
       }
     } else {
-      this.setState({showReadBooks: true});
+      this.setState({ showReadBooks: true });
     }
   };
   handleBookCheck = (e, { book, checked }) => {
@@ -158,6 +166,18 @@ class Books extends React.Component {
   render() {
     return (
       <React.Fragment>
+        <InfoModal
+          open={this.state.hasError}
+          messageType={this.state.errorType}
+          message={this.state.errorMessage}
+          onClick={() =>
+            this.setState({
+              hasError: false,
+              errorType: '',
+              errorMessage: ''
+            })
+          }
+        />
         <Segment padded>
           <Grid>
             <Grid.Row>
@@ -199,6 +219,7 @@ class Books extends React.Component {
                   <Card.Group>
                     {this.currentPageBooks.map(book => {
                       if (
+                        (book.title && book.author_name) ||
                         book.isbn ||
                         (book.first_sentence && book.first_sentence.trim !== '')
                       ) {

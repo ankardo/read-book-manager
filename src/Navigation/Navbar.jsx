@@ -53,7 +53,7 @@ export default class Navbar extends Component {
   };
 
   handleItemClick = (e, { name }) => {
-    if(name === 'userWelcome'){
+    if (name === 'userWelcome') {
       name = 'home';
     }
     name === 'home'
@@ -64,9 +64,13 @@ export default class Navbar extends Component {
 
   render() {
     let { activeItem } = this.state;
-    if(activeItem === undefined){
-      activeItem = 'home';
-    } 
+    if (activeItem === undefined) {
+      if (window.location.pathname.replace('/', '').trim() === '') {
+        activeItem = 'home';
+      } else {
+        activeItem = window.location.pathname.replace('/', '').trim();
+      }
+    }
     return (
       <Menu>
         {this.checkNavBar()}
