@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  Form,
-  Container,
-  Button,
-  Divider,
-  FormField,
-  Icon
-} from 'semantic-ui-react';
-import { Link } from 'react-router-dom';
+import { Form, Container, Button, FormField, Icon } from 'semantic-ui-react';
 import { MContext } from '../_configuration/Context';
 
 class SignUp extends React.Component {
@@ -21,20 +13,15 @@ class SignUp extends React.Component {
   handleSignUp = () => {
     const database = this.context.state.database;
     const { name, email, password } = this.state;
-    const nameEmail = name + email;
 
-    database.open().catch(function(e) {
-      console.error('Open failed: ' + e.stack);
-    });
-
-    database
+      database
       .transaction('rw', database.users, async () => {
         const hasAlreadyRegistered = await database.users
-          .where('[name+email]')
-          .equals([name, email])
+          .where('email')
+          .equals(email)
           .first();
         if (hasAlreadyRegistered) {
-          alert(`User ${name} already registered`);
+          alert(`Email already registered`);
         }
         if (
           hasAlreadyRegistered === undefined &&
@@ -45,14 +32,12 @@ class SignUp extends React.Component {
           await database.users.add({
             name,
             email,
-            password,
-            nameEmail
+            password
           });
         }
       })
-      .catch(e => {
-        console.log(e.stack || e);
-      });
+      .then(() => this.props.history.push('/login'))
+      .catch(e => console.log(e.stack || e));
   };
   render() {
     return (
@@ -60,7 +45,6 @@ class SignUp extends React.Component {
         {() => (
           <Container>
             <Form onSubmit={this.handleSignUp}>
-              {this.state.error && <p>{this.state.error}</p>}
               <FormField>
                 <label>User Name</label>
                 <Form.Input
@@ -98,8 +82,6 @@ class SignUp extends React.Component {
                 </Form.Input>
               </FormField>
               <Button type="submit">Register Free</Button>
-              <Divider horizontal />
-              <Link to="/login">Sign in</Link>
             </Form>
           </Container>
         )}

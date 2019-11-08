@@ -9,22 +9,24 @@ const initialState = {
 export const MContext = React.createContext(initialState);
 
 const createStore = () => {
+  
   const database = new Dexie('readBooksDatabase');
   database.version(1).stores({
-    users: '++id,name,email,password,[name+email]',
-    books: '++id,name,kind'
+    users: '++id,name,email,password',
+    readBooks:
+      '++id,key,isbn,first_sentence,cover_i,title,author_key,author_name,userEmail'
   });
   return database;
 };
 
 class MProvider extends Component {
-  state = { database: createStore(), isAuthenticated: false, userName:'' };
+  state = { database: createStore(), isAuthenticated: false, userName: '' };
   render() {
     return (
       <MContext.Provider
         value={{
           state: this.state,
-          setAuthStatus: (status,name) =>
+          setAuthStatus: (status, name) =>
             this.setState({
               isAuthenticated: status,
               userName: name
