@@ -26,7 +26,8 @@ class Books extends React.Component {
     showReadBooks: false,
     hasError: false,
     errorType: '',
-    errorMessage: ''
+    errorMessage: '',
+    currentPageBooks: []
   };
   options = [
     { key: 'title', text: 'Title', value: 'Title' },
@@ -38,15 +39,47 @@ class Books extends React.Component {
     bookService.setDatabaseValue(this.context.state.database);
     bookService.refreshReadBooks();
   }
+
+  getBookDetailsData = docs => {
+    return Promise.all(
+      docs.map(async doc => {
+        const olid = `OLID${doc.cover_edition_key}`;
+        const bookRequest = await fetch(
+          `https://openlibrary.org/api/books?&bibkeys=${olid}&jscmd=details&format=json`
+        );
+        const bookJson = await bookRequest.json();
+
+        return Object.assign(
+          {},
+          doc,
+          bookJson[olid] &&
+            bookJson[olid].details &&
+            bookJson[olid].details.description
+            ? bookJson[olid].details.description
+            : {}
+        );
+      })
+    );
+  };
   handleFetch = url => {
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        this.currentPageBooks = data.docs;
-        this.setState({
-          isSearching: false,
-          totalPages: Math.ceil(data.numFound / 100)
-        });
+        this.getBookDetailsData(data.docs)
+          .then(books => {
+            console.log(books);
+            this.setState({
+              currentPageBooks: books,
+              isSearching: false,
+              totalPages: Math.ceil(data.numFound / 100)
+            });
+          })
+          .catch(error => {
+            console.error(error.stack || error);
+            this.setState({
+              isSearching: false
+            });
+          });
       })
       .catch(error => {
         this.setState({ isSearching: false });
@@ -125,11 +158,10 @@ class Books extends React.Component {
                 totalPages: Math.ceil(numRecords / 100),
                 activePage: 1
               },
-              () => (this.currentPageBooks = this.state.readBooks)
+              () => this.setState({ currentPageBooks: this.state.readBooks })
             );
           } else {
-            this.currentPageBooks = [];
-            this.setState({ totalPages: 0 });
+            this.setState({ totalPages: 0, currentPageBooks: [] });
           }
         }
       })
@@ -146,6 +178,7 @@ class Books extends React.Component {
       this.setState({ showReadBooks: true });
     }
   };
+
   handleBookCheck = (e, { book, checked }) => {
     if (checked === true) {
       bookService.addBookToDatabase(book);
@@ -215,13 +248,15 @@ class Books extends React.Component {
           <Segment loading={this.state.isSearching} padded>
             <Grid>
               <Grid.Row stretched>
-                {!this.state.isSearching && this.currentPageBooks && (
+                {!this.state.isSearching && this.state.currentPageBooks && (
                   <Card.Group>
-                    {this.currentPageBooks.map(book => {
+                    {this.state.currentPageBooks.map(book => {
                       if (
                         (book.title && book.author_name) ||
                         book.isbn ||
-                        (book.first_sentence && book.first_sentence.trim !== '')
+                        (book.first_sentence &&
+                          book.first_sentence.trim !== '') ||
+                        (book.value && book.value.trim !== '')
                       ) {
                         return (
                           <Card fluid key={book.key}>
@@ -231,7 +266,7 @@ class Books extends React.Component {
                                   <Grid.Column>
                                     {book.cover_i ? (
                                       <Item.Image
-                                        size="small"
+                                        size="medium"
                                         src={`http://covers.openlibrary.org/b/ID/${book.cover_i}-M.jpg`}
                                       />
                                     ) : (
@@ -248,10 +283,24 @@ class Books extends React.Component {
                                           {book.author_name}
                                         </Item.Meta>
                                         <Item.Description>
-                                          {book.first_sentence &&
+                                          {book.value &&
+                                            book.value.trim !== '' && (
+                                              <React.Fragment>
+                                                <p>{book.value}</p>
+                                              </React.Fragment>
+                                            )}
+                                          {!(
+                                            book.value && book.value.trim !== ''
+                                          ) &&
+                                            book.first_sentence &&
                                             book.first_sentence.trim !== '' && (
                                               <React.Fragment>
-                                                {book.first_sentence}
+                                                <p>
+                                                  {book.first_sentence.length >
+                                                  0
+                                                    ? book.first_sentence[0]
+                                                    : book.first_sentence}
+                                                </p>
                                               </React.Fragment>
                                             )}
                                         </Item.Description>
@@ -271,14 +320,17 @@ class Books extends React.Component {
                                   </Grid.Column>
                                   <Grid.Column>
                                     {book.author_key && (
-                                      <React.Fragment>
-                                        <Item.Image
-                                          floated="left"
-                                          size="mini"
-                                          src={`http://covers.openlibrary.org/a/OLID/${book.author_key}-S.jpg`}
-                                        />
-                                        <Header>{book.author_name}</Header>
-                                      </React.Fragment>
+                                      <Grid>
+                                        <Grid.Row centered>
+                                          <Item.Image
+                                            size="medium"
+                                            src={`http://covers.openlibrary.org/a/OLID/${book.author_key}-M.jpg`}
+                                          />
+                                        </Grid.Row>
+                                        <Grid.Row centered>
+                                          <Header>{book.author_name}</Header>
+                                        </Grid.Row>
+                                      </Grid>
                                     )}
                                   </Grid.Column>
                                 </Grid.Row>

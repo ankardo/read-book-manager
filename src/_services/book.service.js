@@ -9,12 +9,14 @@ const setDatabaseValue = value => {
 const addBookToDatabase = book => {
   const key = book.key;
   const isbn = book.isbn[0];
+  const value = book.value;
   const first_sentence = book.first_sentence;
   const cover_i = book.cover_i;
   const title = book.title;
   const author_key = book.author_key;
   const author_name = book.author_name;
   const userEmail = authenticationService.currentUserValue.email;
+  const readDate = new Date();
 
   database.transaction('rw', database.readBooks, async () => {
     const hasAlreadyRegistered = await database.readBooks
@@ -26,12 +28,14 @@ const addBookToDatabase = book => {
         .put({
           key,
           isbn,
+          value,
           first_sentence,
           cover_i,
           title,
           author_key,
           author_name,
-          userEmail
+          userEmail,
+          readDate
         })
         .then(book => {
           readBooksList = [...readBooksList, book];
