@@ -1,15 +1,7 @@
 import React from 'react';
 import { authenticationService } from '../_services/authentication.service';
-import {
-  Form,
-  Container,
-  Button,
-  FormField,
-  Icon,
-  Divider
-} from 'semantic-ui-react';
-import { Link } from 'react-router-dom';
 import { MContext } from '../_configuration/Context';
+import { Form, Container, Button, FormField, Icon } from 'semantic-ui-react';
 import { configureFakeBackend } from '../_utils/fake-backend';
 
 class SigIn extends React.Component {
@@ -21,22 +13,21 @@ class SigIn extends React.Component {
   constructor(props) {
     super(props);
     if (authenticationService.currentUserValue) {
-      this.props.history.push('/app');
+      this.props.history.push('/');
     }
   }
-  componentDidMount(){
+  componentDidMount() {
     configureFakeBackend(this.context.state.database);
   }
   handleSignIn = () => {
-    
     authenticationService
       .login(this.state.email, this.state.password)
       .then(user => {
-        const { from } = {from: { pathname: '/' }};
+        const { from } = { from: { pathname: '/' } };
         this.props.history.push(from);
       })
       .catch(e => alert(e));
-  }
+  };
 
   render() {
     return (
@@ -68,8 +59,6 @@ class SigIn extends React.Component {
             </Form.Input>
           </FormField>
           <Button type="submit">Login</Button>
-          <Divider horizontal />
-          <Link to="/signUp">Not registered? Sign Up!</Link>
         </Form>
       </Container>
     );
