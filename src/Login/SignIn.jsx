@@ -3,12 +3,16 @@ import { authenticationService } from '../_services/authentication.service';
 import { MContext } from '../_configuration/Context';
 import { Form, Container, Button, FormField, Icon } from 'semantic-ui-react';
 import { configureFakeBackend } from '../_utils/fake-backend';
+import InfoModal from '../_utils/InfoModal';
 
 class SigIn extends React.Component {
   static contextType = MContext;
   state = {
     email: '',
-    password: ''
+    password: '',
+    hasError: false,
+    errorType: '',
+    errorMessage: ''
   };
   constructor(props) {
     super(props);
@@ -26,12 +30,30 @@ class SigIn extends React.Component {
         const { from } = { from: { pathname: '/' } };
         this.props.history.push(from);
       })
-      .catch(e => alert(e));
+      .catch(error =>
+        this.setState({
+          hasError: true,
+          errorType: "Couldn't Log in",
+          errorMessage: error
+        })
+      );
   };
 
   render() {
     return (
       <Container>
+        <InfoModal
+          open={this.state.hasError}
+          messageType={this.state.errorType}
+          message={this.state.errorMessage}
+          onClick={() =>
+            this.setState({
+              hasError: false,
+              errorType: '',
+              errorMessage: ''
+            })
+          }
+        />
         <Form onSubmit={this.handleSignIn}>
           <FormField>
             <label>Email</label>

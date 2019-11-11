@@ -9,12 +9,11 @@ const initialState = {
 export const MContext = React.createContext(initialState);
 
 const createStore = () => {
-  
   const database = new Dexie('readBooksDatabase');
   database.version(1).stores({
     users: '++id,name,email,password',
     readBooks:
-      '++id,key,isbn,first_sentence,cover_i,title,author_key,author_name,userEmail'
+      '++id,key,isbn,value,first_sentence,cover_i,title,author_key,author_name,userEmail,readDate'
   });
   return database;
 };

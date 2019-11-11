@@ -1,18 +1,10 @@
 import React from 'react';
-import {
-  Input,
-  Segment,
-  Dropdown,
-  Grid,
-  Pagination,
-  Item,
-  Card,
-  Header,
-  Checkbox
-} from 'semantic-ui-react';
-import logo from '../Books/logo.png';
+import { Input, Segment, Dropdown, Grid, Checkbox } from 'semantic-ui-react';
+
 import { MContext } from '../_configuration/Context';
 import { bookService } from '../_services/book.service';
+import InfoModal from '../_utils/InfoModal';
+import BooksList from './BooksList';
 
 class Books extends React.Component {
   static contextType = MContext;
@@ -22,7 +14,11 @@ class Books extends React.Component {
     searchValue: '',
     totalPages: 0,
     activePage: 1,
-    showReadBooks: false
+    showReadBooks: false,
+    hasError: false,
+    errorType: '',
+    errorMessage: '',
+    currentPageBooks: []
   };
   options = [
     { key: 'title', text: 'Title', value: 'Title' },
@@ -34,19 +30,51 @@ class Books extends React.Component {
     bookService.setDatabaseValue(this.context.state.database);
     bookService.refreshReadBooks();
   }
+
+  getBookDetailsData = docs => {
+    return Promise.all(
+      docs.map(async doc => {
+        const olid = `OLID${doc.cover_edition_key}`;
+        const bookRequest = await fetch(
+          `https://openlibrary.org/api/books?&bibkeys=${olid}&jscmd=details&format=json`
+        );
+        const bookJson = await bookRequest.json();
+
+        return Object.assign(
+          {},
+          doc,
+          bookJson[olid] &&
+            bookJson[olid].details &&
+            bookJson[olid].details.description
+            ? bookJson[olid].details.description
+            : {}
+        );
+      })
+    );
+  };
   handleFetch = url => {
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        this.currentPageBooks = data.docs;
-        this.setState({
-          isSearching: false,
-          totalPages: Math.ceil(data.numFound / 100)
-        });
+        this.getBookDetailsData(data.docs)
+          .then(books => {
+            console.log(books);
+            this.setState({
+              currentPageBooks: books,
+              isSearching: false,
+              totalPages: Math.ceil(data.numFound / 100)
+            });
+          })
+          .catch(error => {
+            console.error(error.stack || error);
+            this.setState({
+              isSearching: false
+            });
+          });
       })
-      .catch(e => {
+      .catch(error => {
         this.setState({ isSearching: false });
-        console.log(e.stack || e);
+        console.error(error.stack || error);
       });
   };
 
@@ -81,7 +109,11 @@ class Books extends React.Component {
         );
       }
     } else {
-      alert('You should type something to search!');
+      this.setState({
+        hasError: true,
+        errorType: "Couldn't Search Books",
+        errorMessage: 'You should type something to search!'
+      });
     }
   };
   handleOptionChange = (e, { value }) => {
@@ -117,27 +149,26 @@ class Books extends React.Component {
                 totalPages: Math.ceil(numRecords / 100),
                 activePage: 1
               },
-              () => (this.currentPageBooks = this.state.readBooks)
+              () => this.setState({ currentPageBooks: this.state.readBooks })
             );
           } else {
-            this.currentPageBooks = [];
-            this.setState({ totalPages: 0 });
+            this.setState({ totalPages: 0, currentPageBooks: [] });
           }
         }
       })
-      .catch(e => console.log(e.stack || e));
+      .catch(error => console.error(error.stack || error));
     if (!checked) {
       this.setState({ showReadBooks: false });
       if (this.state.searchString && this.state.searchString.trim !== '') {
         this.handleSearchClick();
       } else {
-        this.currentPageBooks = [];
-        this.setState({ totalPages: 0 });
+        this.setState({ totalPages: 0, currentPageBooks: [] });
       }
     } else {
-      this.setState({showReadBooks: true});
+      this.setState({ showReadBooks: true });
     }
   };
+
   handleBookCheck = (e, { book, checked }) => {
     if (checked === true) {
       bookService.addBookToDatabase(book);
@@ -158,7 +189,19 @@ class Books extends React.Component {
   render() {
     return (
       <React.Fragment>
-        <Segment padded>
+        <InfoModal
+          open={this.state.hasError}
+          messageType={this.state.errorType}
+          message={this.state.errorMessage}
+          onClick={() =>
+            this.setState({
+              hasError: false,
+              errorType: '',
+              errorMessage: ''
+            })
+          }
+        />
+        <Segment padded="very">
           <Grid>
             <Grid.Row>
               <Input
@@ -192,117 +235,15 @@ class Books extends React.Component {
           </Grid>
         </Segment>
         {(this.state.isSearching || this.state.totalPages > 0) && (
-          <Segment loading={this.state.isSearching} padded>
-            <Grid>
-              <Grid.Row stretched>
-                {!this.state.isSearching && this.currentPageBooks && (
-                  <Card.Group>
-                    {this.currentPageBooks.map(book => {
-                      if (
-                        book.isbn ||
-                        (book.first_sentence && book.first_sentence.trim !== '')
-                      ) {
-                        return (
-                          <Card fluid key={book.key}>
-                            <Card.Content>
-                              <Grid container textAlign="justified">
-                                <Grid.Row columns="equal">
-                                  <Grid.Column>
-                                    {book.cover_i ? (
-                                      <Item.Image
-                                        size="small"
-                                        src={`http://covers.openlibrary.org/b/ID/${book.cover_i}-M.jpg`}
-                                      />
-                                    ) : (
-                                      <Item.Image size="small" src={logo} />
-                                    )}
-                                  </Grid.Column>
-                                  <Grid.Column floated="left">
-                                    <Card.Header>
-                                      <Header>{book.title}</Header>
-                                    </Card.Header>
-                                    <Item>
-                                      <Item.Content>
-                                        <Item.Meta>
-                                          {book.author_name}
-                                        </Item.Meta>
-                                        <Item.Description>
-                                          {book.first_sentence &&
-                                            book.first_sentence.trim !== '' && (
-                                              <React.Fragment>
-                                                {book.first_sentence}
-                                              </React.Fragment>
-                                            )}
-                                        </Item.Description>
-                                        <Item.Extra>
-                                          {book.isbn && book.isbn[0] && (
-                                            <a
-                                              href={`http://openlibrary.org/isbn/${
-                                                book.isbn[0]
-                                              }`}
-                                            >
-                                              See book on Openlibrary
-                                            </a>
-                                          )}
-                                        </Item.Extra>
-                                      </Item.Content>
-                                    </Item>
-                                  </Grid.Column>
-                                  <Grid.Column>
-                                    {book.author_key && (
-                                      <React.Fragment>
-                                        <Item.Image
-                                          floated="left"
-                                          size="mini"
-                                          src={`http://covers.openlibrary.org/a/OLID/${book.author_key}-S.jpg`}
-                                        />
-                                        <Header>{book.author_name}</Header>
-                                      </React.Fragment>
-                                    )}
-                                  </Grid.Column>
-                                </Grid.Row>
-                              </Grid>
-                            </Card.Content>
-                            <Card.Content extra>
-                              <Grid>
-                                <Grid.Row centered>
-                                  <Checkbox
-                                    toggle
-                                    label="Read"
-                                    checked={
-                                      this.state.readBooks && book
-                                        ? this.state.readBooks.find(
-                                            readBook =>
-                                              readBook.key === book.key
-                                          )
-                                          ? true
-                                          : false
-                                        : false
-                                    }
-                                    book={book}
-                                    onChange={this.handleBookCheck}
-                                  />
-                                </Grid.Row>
-                              </Grid>
-                            </Card.Content>
-                          </Card>
-                        );
-                      } else return '';
-                    })}
-                  </Card.Group>
-                )}
-              </Grid.Row>
-              <Grid.Row centered>
-                {this.state.totalPages > 0 && (
-                  <Pagination
-                    totalPages={this.state.totalPages}
-                    activePage={this.state.activePage}
-                    onPageChange={this.handlePaginationChange}
-                  />
-                )}
-              </Grid.Row>
-            </Grid>
-          </Segment>
+          <BooksList
+            isSearching={this.state.isSearching}
+            currentPageBooks={this.state.currentPageBooks}
+            readBooks={this.state.readBooks}
+            totalPages={this.state.totalPages}
+            activePage={this.state.activePage}
+            handleBookCheck={this.handleBookCheck}
+            handlePaginationChange={this.handlePaginationChange}
+          />
         )}
       </React.Fragment>
     );
