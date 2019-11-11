@@ -1,5 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 import { authenticationService } from './authentication.service';
+import moment from 'moment';
 
 let database;
 let readBooksList = [];
@@ -16,7 +17,8 @@ const addBookToDatabase = book => {
   const author_key = book.author_key;
   const author_name = book.author_name;
   const userEmail = authenticationService.currentUserValue.email;
-  const readDate = new Date();
+  const readDate = book.readDate;
+  const readDateIso = moment(book.readDate, 'DD/MM/YYYY').format("YYYY-MM-DD").toString();
 
   database.transaction('rw', database.readBooks, async () => {
     const hasAlreadyRegistered = await database.readBooks
@@ -35,7 +37,8 @@ const addBookToDatabase = book => {
           author_key,
           author_name,
           userEmail,
-          readDate
+          readDate,
+          readDateIso
         })
         .then(book => {
           readBooksList = [...readBooksList, book];
@@ -63,6 +66,8 @@ const removeBookFromDatabase = book => {
 const refreshReadBooks = async () => {
   database.transaction('r', database.readBooks, async () => {
     readBooksList = await database.readBooks
+      .where('userEmail')
+      .equals(authenticationService.currentUserValue.email)
       .toArray()
       .catch(error => console.error(error.stack || error));
     readBooksSubject.next(readBooksList);

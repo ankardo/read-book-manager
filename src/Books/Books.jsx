@@ -5,6 +5,8 @@ import { MContext } from '../_configuration/Context';
 import { bookService } from '../_services/book.service';
 import InfoModal from '../_utils/InfoModal';
 import BooksList from './BooksList';
+import moment from 'moment';
+import withUnmounted from '@ishawnwang/withunmounted'
 
 class Books extends React.Component {
   static contextType = MContext;
@@ -26,6 +28,9 @@ class Books extends React.Component {
     { key: 'subject', text: 'Subject', value: 'Subject' }
   ];
   componentDidMount() {
+    if (this.hasUnmounted) {
+      return;
+    }
     bookService.readBooks.subscribe(readBooks => this.setState({ readBooks }));
     bookService.setDatabaseValue(this.context.state.database);
     bookService.refreshReadBooks();
@@ -43,6 +48,7 @@ class Books extends React.Component {
         return Object.assign(
           {},
           doc,
+          { readDate: moment().format('DD-MM-YYYY') },
           bookJson[olid] &&
             bookJson[olid].details &&
             bookJson[olid].details.description
@@ -58,7 +64,6 @@ class Books extends React.Component {
       .then(data => {
         this.getBookDetailsData(data.docs)
           .then(books => {
-            console.log(books);
             this.setState({
               currentPageBooks: books,
               isSearching: false,
@@ -90,8 +95,8 @@ class Books extends React.Component {
           () =>
             this.handleFetch(
               this.state.searchUrl +
-                this.state.searchValue +
-                this.state.activePage
+              this.state.searchValue +
+              this.state.activePage
             )
         );
       } else {
@@ -103,8 +108,8 @@ class Books extends React.Component {
           () =>
             this.handleFetch(
               this.state.searchUrl +
-                this.state.searchValue +
-                this.state.activePage
+              this.state.searchValue +
+              this.state.activePage
             )
         );
       }
@@ -149,7 +154,7 @@ class Books extends React.Component {
                 totalPages: Math.ceil(numRecords / 100),
                 activePage: 1
               },
-              () => this.setState({ currentPageBooks: this.state.readBooks })
+              () => this.setState({ currentPageBooks: this.state.readBooks.sort((a, b) => a.readDate > b.readDate ? -1 : a.readDate < b.readDate ? 1 : 0) })
             );
           } else {
             this.setState({ totalPages: 0, currentPageBooks: [] });
@@ -179,11 +184,15 @@ class Books extends React.Component {
   };
 
   handlePaginationChange = (e, { activePage }) => {
-    this.setState({ isSearching: true, activePage: activePage }, () =>
-      this.handleFetch(
-        this.state.searchUrl + this.state.searchValue + this.state.activePage
-      )
-    );
+    if (this.state.showReadBooks) {
+      this.setState({ currentPageBooks: this.state.readBooks.slice(0 + (100 * activePage - 1), 100 * activePage), activePage: activePage })
+    } else {
+      this.setState({ isSearching: true, activePage: activePage }, () =>
+        this.handleFetch(
+          this.state.searchUrl + this.state.searchValue + this.state.activePage
+        )
+      );
+    }
   };
 
   render() {
@@ -241,6 +250,8 @@ class Books extends React.Component {
             readBooks={this.state.readBooks}
             totalPages={this.state.totalPages}
             activePage={this.state.activePage}
+            dateDisabled={this.state.showReadBooks}
+            showBookCheck={true}
             handleBookCheck={this.handleBookCheck}
             handlePaginationChange={this.handlePaginationChange}
           />
@@ -249,4 +260,4 @@ class Books extends React.Component {
     );
   }
 }
-export default Books;
+export default withUnmounted(Books);

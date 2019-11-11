@@ -1,14 +1,18 @@
 import React from 'react';
 import { PrivateRoute } from '../_configuration/PrivateRoute';
+
 import MProvider from '../_configuration/Context';
 import { history } from '../_utils/history';
 
 import { authenticationService } from '../_services/authentication.service';
 import { Router, Route, Switch } from 'react-router-dom';
+import Navbar from '../Navigation/Navbar';
 import SignIn from '../Login/SignIn';
 import SignUp from '../Login/SignUp';
 import Books from '../Books/Books';
-import Navbar from '../Navigation/Navbar';
+import Report from '../ReadingsYearlyReport/Report';
+
+
 
 class App extends React.Component {
   componentDidMount() {
@@ -28,7 +32,7 @@ class App extends React.Component {
             <Route path="/login" component={SignIn} />
             <Route path="/signUp" component={SignUp} />
             <PrivateRoute path="/books" component={Books} />
-            <PrivateRoute path="/report" component={Books} />
+            <PrivateRoute path="/report" component={Report} />
             <Route path="*" component={() => <h1>Page not found</h1>} />
           </Switch>
         </Router>

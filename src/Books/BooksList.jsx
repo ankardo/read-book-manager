@@ -6,124 +6,139 @@ import {
   Item,
   Card,
   Header,
-  Checkbox
+  Checkbox,
+  Container
 } from 'semantic-ui-react';
-import logo from '../Books/logo.png';
+
+import { DateInput } from 'semantic-ui-calendar-react';
 class BooksList extends React.Component {
+  state = {
+    lastReadBook: {}
+  }
+
   render() {
     return (
       <Segment loading={this.props.isSearching} padded basic>
         <Grid>
           <Grid.Row stretched>
             {!this.props.isSearching && this.props.currentPageBooks && (
-              <Card.Group>
-                {this.props.currentPageBooks.map(book => {
-                  if (
-                    (book.title && book.author_name) ||
-                    book.isbn ||
-                    (book.first_sentence && book.first_sentence.trim !== '') ||
-                    (book.value && book.value.trim !== '')
-                  ) {
-                    return (
-                      <Card fluid key={book.key}>
-                        <Card.Content>
-                          <Grid container textAlign="justified">
-                            <Grid.Row columns="equal">
-                              <Grid.Column>
-                                {book.cover_i ? (
-                                  <Item.Image
-                                    size="medium"
-                                    src={`http://covers.openlibrary.org/b/ID/${book.cover_i}-M.jpg`}
-                                  />
-                                ) : (
-                                  <Item.Image size="small" src={logo} />
-                                )}
-                              </Grid.Column>
-                              <Grid.Column floated="left">
-                                <Card.Header>
-                                  <Header>{book.title}</Header>
-                                </Card.Header>
-                                <Item>
-                                  <Item.Content>
-                                    <Item.Meta>{book.author_name}</Item.Meta>
-                                    <Item.Description>
-                                      {book.value && book.value.trim !== '' && (
-                                        <React.Fragment>
-                                          <p>{book.value}</p>
-                                        </React.Fragment>
-                                      )}
-                                      {!(
-                                        book.value && book.value.trim !== ''
-                                      ) &&
-                                        book.first_sentence &&
-                                        book.first_sentence.trim !== '' && (
+              <Container fluid>
+                <Card.Group>
+                  {this.props.currentPageBooks.map(book => {
+                    if (
+                      (book.title && book.author_name) ||
+                      book.isbn ||
+                      (book.first_sentence && book.first_sentence.trim !== '') ||
+                      (book.value && book.value.trim !== '')
+                    ) {
+                      return (
+                        <Card fluid key={book.key}>
+                          <Card.Content>
+                            <Grid container textAlign="justified">
+                              <Grid.Row columns="equal">
+                                <Grid.Column>
+                                  {book.cover_i ? (
+                                    <Item.Image
+                                      size="medium"
+                                      src={`http://covers.openlibrary.org/b/ID/${book.cover_i}-M.jpg`}
+                                    />
+                                  ) : (
+                                      <Item.Image size="small" src={require('../_configuration/logo.png')} />
+                                    )}
+                                </Grid.Column>
+                                <Grid.Column floated="left">
+                                  <Card.Header>
+                                    <Header>{book.title}</Header>
+                                  </Card.Header>
+                                  <Item>
+                                    <Item.Content>
+                                      <Item.Meta>{book.author_name}</Item.Meta>
+                                      <Item.Description>
+                                        {book.value && book.value.trim !== '' && (
                                           <React.Fragment>
-                                            <p>
-                                              {book.first_sentence.length > 0
-                                                ? book.first_sentence[0]
-                                                : book.first_sentence}
-                                            </p>
+                                            <p>{book.value}</p>
                                           </React.Fragment>
                                         )}
-                                    </Item.Description>
-                                    <Item.Extra>
-                                      {book.isbn && book.isbn[0] && (
-                                        <a
-                                          href={`http://openlibrary.org/isbn/${
-                                            book.isbn[0]
-                                          }`}
-                                        >
-                                          See book on Openlibrary
+                                        {!(book.value && book.value.trim !== '') &&
+                                          book.first_sentence &&
+                                          book.first_sentence.trim !== '' && (
+                                            <React.Fragment>
+                                              <p>
+                                                {book.first_sentence.length > 0
+                                                  ? book.first_sentence[0]
+                                                  : book.first_sentence}
+                                              </p>
+                                            </React.Fragment>
+                                          )}
+                                      </Item.Description>
+                                      <Item.Extra>
+                                        {book.isbn && book.isbn[0] && (
+                                          <a
+                                            href={`http://openlibrary.org/isbn/${book.isbn[0]}`}
+                                          >
+                                            See book on Openlibrary
                                         </a>
-                                      )}
-                                    </Item.Extra>
-                                  </Item.Content>
-                                </Item>
-                              </Grid.Column>
-                              <Grid.Column>
-                                {book.author_key && (
-                                  <Grid>
-                                    <Grid.Row centered>
-                                      <Item.Image
-                                        size="medium"
-                                        src={`http://covers.openlibrary.org/a/OLID/${book.author_key}-M.jpg`}
-                                      />
-                                    </Grid.Row>
-                                    <Grid.Row centered>
-                                      <Header>{book.author_name}</Header>
-                                    </Grid.Row>
-                                  </Grid>
-                                )}
-                              </Grid.Column>
-                            </Grid.Row>
-                          </Grid>
-                        </Card.Content>
-                        <Card.Content extra>
-                          <Grid>
-                            <Grid.Row centered>
-                              <Checkbox
-                                toggle
-                                label="Read"
-                                checked={
-                                  this.props.readBooks && book
-                                    ? this.props.readBooks.find(
-                                        readBook => readBook.key === book.key
-                                      )
-                                      ? true
-                                      : false
-                                    : false
-                                }
-                                book={book}
-                                onChange={this.props.handleBookCheck}
-                              />
-                            </Grid.Row>
-                          </Grid>
-                        </Card.Content>
-                      </Card>
-                    );
-                  } else return '';
-                })}
-              </Card.Group>
+                                        )}
+                                      </Item.Extra>
+                                    </Item.Content>
+                                  </Item>
+                                </Grid.Column>
+                                <Grid.Column>
+                                  {book.author_key && (
+                                    <Grid>
+                                      <Grid.Row centered>
+                                        <Item.Image
+                                          size="medium"
+                                          src={`http://covers.openlibrary.org/a/OLID/${book.author_key}-M.jpg`}
+                                        />
+                                      </Grid.Row>
+                                      <Grid.Row centered>
+                                        <Header>{book.author_name}</Header>
+                                      </Grid.Row>
+                                    </Grid>
+                                  )}
+                                </Grid.Column>
+                              </Grid.Row>
+                            </Grid>
+                          </Card.Content>
+
+                          <Card.Content extra>
+                            <Grid>
+                              <Grid.Row centered columns="equal">
+                                <Grid.Column>
+                                  <DateInput
+                                    name="date"
+                                    placeholder="Finished reading date"
+                                    value={this.props.readBooks && book ?
+                                      this.props.readBooks.find(readBook => readBook.key === book.key) ?
+                                        this.props.readBooks.find(readBook => readBook.key === book.key).readDate : book.readDate : book.readDate}
+                                    iconPosition="left"
+                                    onChange={(e, { value }) => { book.readDate = value; this.setState({ lastReadBook: book }) }}
+                                    disabled={this.props.dateDisabled}
+                                  />
+                                </Grid.Column>
+                                {this.props.showBookCheck &&
+                                  <Grid.Column>
+                                    <Checkbox
+                                      toggle
+                                      label="Read"
+                                      checked={
+                                        this.props.readBooks && book ?
+                                          this.props.readBooks.find(readBook => readBook.key === book.key) ? true : false : false
+                                      }
+                                      book={book}
+                                      onChange={this.props.handleBookCheck}
+                                    />
+                                  </Grid.Column>}
+                              </Grid.Row>
+                            </Grid>
+                          </Card.Content>
+                        </Card>
+                      );
+                    } else return '';
+                  })}
+                </Card.Group>
+              </Container>
             )}
           </Grid.Row>
           <Grid.Row centered>
